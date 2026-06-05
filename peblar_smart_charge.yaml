@@ -1,0 +1,436 @@
+blueprint:
+  name: Peblar slim opladen
+  description: EV slim opladen op basis van zon en goedkope dynamische tarieven
+  domain: automation
+  input:
+    peblar_ev_charger_status:
+      name: Peblar status sensor
+      description: Sensor uit Peblar integratie die de huidige status bevat
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+    peblar_charge_switch:
+      name: Peblar opladen schakelaar
+      description: Schakelaar uit Peblar integratie die laden kan starten en stoppen
+      selector:
+        entity:
+          filter:
+            - domain: switch
+    peblar_smart_charge_mode:
+      name: Peblar slim laden methode
+      description: Keuzelijst uit Peblar integratie waarmee de laadmodus gekozen kan worden
+      selector:
+        entity:
+          filter:
+            - domain: select
+    goedkoop_laden_binary:
+      name: Cheapest energy hours binaire sensor
+      description: Binaire sensor die true/false geeft afhankelijk van goedkoop tarief
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+    switch_na_zonsondergang_laden:
+      name: Schakelaar - Na zonsondergang laden
+      description: Schakelaar (helper) om te bepalen of er na zonsondergang geladen mag worden
+      selector:
+        entity:
+          filter:
+            - domain: input_boolean
+    switch_laden_goedkoop_aanvullen:
+      name: Schakelaar - Zonneladen goedkoop aanvullen
+      description: Schakelaar (helper) om te bepalen of het zonneladen goedkoop aangevuld moet worden (meer vermogen)
+      selector:
+        entity:
+          filter:
+            - domain: input_boolean
+    switch_direct_laden:
+      name: Schakelaar - Direct laden
+      description: Schakelaar (helper) om direct te starten met laden wanneer nodig
+      selector:
+        entity:
+          filter:
+            - domain: input_boolean
+    select_laadpaal_gestart_door:
+      name: Helper select - Laadpaal gestart door
+      description: Keuzelijst helper die waardes "Goedkoop laden, Zonneladen, Direct" moet bevatten om te onthouden welke optie de lader gestart heeft.
+      selector:
+        entity:
+          filter:
+            - domain: input_select
+    maanden_goedkoop_laden:
+      name: Maanden goedkoop laden
+      description: Maanden waarin goedkoop laden prioriteit heeft
+      default:
+        - jan
+        - feb
+        - nov
+        - dec
+      selector:
+        select:
+          multiple: true
+          options:
+            - jan
+            - feb
+            - mrt
+            - apr
+            - mei
+            - jun
+            - jul
+            - aug
+            - sep
+            - okt
+            - nov
+            - dec
+
+    maanden_slim_zonneladen:
+      name: Maanden slim zonneladen
+      description: Maanden waarin slim zonneladen gebruikt wordt
+      default:
+        - mrt
+        - sep
+        - okt
+      selector:
+        select:
+          multiple: true
+          options:
+            - jan
+            - feb
+            - mrt
+            - apr
+            - mei
+            - jun
+            - jul
+            - aug
+            - sep
+            - okt
+            - nov
+            - dec
+
+    maanden_puur_zonneladen:
+      name: Maanden puur zonneladen
+      description: Maanden waarin puur zonneladen gebruikt wordt
+      default:
+        - apr
+        - mei
+        - jun
+        - jul
+        - aug
+      selector:
+        select:
+          multiple: true
+          options:
+            - jan
+            - feb
+            - mrt
+            - apr
+            - mei
+            - jun
+            - jul
+            - aug
+            - sep
+            - okt
+            - nov
+            - dec
+
+triggers:
+  - trigger: state
+    entity_id:
+      - !input peblar_ev_charger_status
+    from:
+      - no_ev_connected
+    to:
+      - suspended
+      - charging
+  - trigger: state
+    entity_id:
+      - !input goedkoop_laden_binary
+    to:
+      - "on"
+      - "off"
+      - unavailable
+  - trigger: state
+    entity_id:
+      - !input switch_na_zonsondergang_laden
+    to:
+      - "on"
+      - "off"
+  - trigger: state
+    entity_id:
+      - !input switch_laden_goedkoop_aanvullen
+    to:
+      - "on"
+      - "off"
+  - trigger: state
+    entity_id:
+      - sun.sun
+    to:
+      - above_horizon
+      - below_horizon
+  - trigger: state
+    entity_id:
+      - !input switch_direct_laden
+    to:
+      - "on"
+      - "off"
+conditions:
+  - condition: state
+    entity_id: !input peblar_ev_charger_status
+    state:
+      - charging
+      - suspended
+
+variables:
+  maanden_goedkoop_laden: !input maanden_goedkoop_laden
+  maanden_slim_zonneladen: !input maanden_slim_zonneladen
+  maanden_puur_zonneladen: !input maanden_puur_zonneladen
+
+  huidige_maand: >
+    {% set maanden = {
+      1:'jan', 2:'feb', 3:'mrt', 4:'apr',
+      5:'mei', 6:'jun', 7:'jul', 8:'aug',
+      9:'sep', 10:'okt', 11:'nov', 12:'dec'
+    } %}
+    {{ maanden[now().month] }}
+  
+actions:
+  - alias: Laadmodus instellen
+    choose:
+      - conditions:
+          - condition: state
+            entity_id: !input switch_direct_laden
+            state:
+              - "on"
+        sequence:
+          - action: select.select_option
+            metadata: {}
+            target:
+              entity_id: !input peblar_smart_charge_mode
+            data:
+              option: default
+          - action: switch.turn_on
+            metadata: {}
+            target:
+              entity_id: !input peblar_charge_switch
+            data: {}
+          - action: input_select.select_option
+            metadata: {}
+            target:
+              entity_id: !input select_laadpaal_gestart_door
+            data:
+              option: Direct
+        alias: Direct laden
+      - conditions:
+          - condition: or
+            conditions:
+              - alias: Maand jan, feb, nov en dec
+                condition: template
+                value_template: >
+                  {{ huidige_maand in maanden_goedkoop_laden }}
+              - condition: and
+                conditions:
+                  - condition: state
+                    entity_id: sun.sun
+                    state:
+                      - below_horizon
+                  - condition: state
+                    entity_id: !input switch_na_zonsondergang_laden
+                    state:
+                      - "on"
+                alias: Na zonsondergang laden
+          - condition: state
+            entity_id: !input goedkoop_laden_binary
+            state:
+              - "on"
+        sequence:
+          - action: select.select_option
+            metadata: {}
+            target:
+              entity_id: !input peblar_smart_charge_mode
+            data:
+              option: default
+          - action: switch.turn_on
+            metadata: {}
+            target:
+              entity_id: !input peblar_charge_switch
+            data: {}
+          - action: input_select.select_option
+            metadata: {}
+            target:
+              entity_id: !input select_laadpaal_gestart_door
+            data:
+              option: Goedkoop laden
+        alias: Goedkoop laden
+      - conditions:
+          - condition: state
+            entity_id: sun.sun
+            state:
+              - above_horizon
+          - condition: state
+            entity_id: !input switch_laden_goedkoop_aanvullen
+            state:
+              - "on"
+          - condition: state
+            entity_id: !input peblar_smart_charge_mode
+            state:
+              - pure_solar
+              - smart_solar
+          - condition: state
+            entity_id: !input goedkoop_laden_binary
+            state:
+              - "on"
+        sequence:
+          - action: select.select_option
+            metadata: {}
+            target:
+              entity_id: !input peblar_smart_charge_mode
+            data:
+              option: fast_solar
+          - action: input_select.select_option
+            metadata: {}
+            target:
+              entity_id: !input select_laadpaal_gestart_door
+            data:
+              option: Zonneladen
+        alias: Goedkoop aanvullen
+      - conditions:
+          - alias: Maand mrt, sep en okt
+            condition: template
+            value_template: >
+              {{ huidige_maand in maanden_slim_zonneladen }}
+          - condition: state
+            entity_id: sun.sun
+            state:
+              - above_horizon
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input peblar_ev_charger_status
+                state:
+                  - charging
+            alias: Als er niet geladen wordt
+        sequence:
+          - action: select.select_option
+            metadata: {}
+            target:
+              entity_id: !input peblar_smart_charge_mode
+            data:
+              option: smart_solar
+          - action: switch.turn_on
+            metadata: {}
+            target:
+              entity_id: !input peblar_charge_switch
+            data: {}
+          - action: input_select.select_option
+            metadata: {}
+            target:
+              entity_id: !input select_laadpaal_gestart_door
+            data:
+              option: Zonneladen
+        alias: Slim zonneladen
+      - conditions:
+          - alias: Maand apr, mei, jun, jul en aug
+            condition: template
+            value_template: >
+              {{ huidige_maand in maanden_puur_zonneladen }}
+          - condition: state
+            entity_id: sun.sun
+            state:
+              - above_horizon
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input peblar_ev_charger_status
+                state:
+                  - charging
+            alias: Als er niet geladen wordt
+        sequence:
+          - action: select.select_option
+            metadata: {}
+            target:
+              entity_id: !input peblar_smart_charge_mode
+            data:
+              option: pure_solar
+          - action: switch.turn_on
+            metadata: {}
+            target:
+              entity_id: !input peblar_charge_switch
+            data: {}
+          - action: input_select.select_option
+            metadata: {}
+            target:
+              entity_id: !input select_laadpaal_gestart_door
+            data:
+              option: Zonneladen
+        alias: Puur zonneladen
+      - conditions:
+          - condition: state
+            entity_id: !input switch_direct_laden
+            state:
+              - "off"
+          - condition: state
+            entity_id: !input select_laadpaal_gestart_door
+            state:
+              - Direct
+        sequence:
+          - action: switch.turn_off
+            metadata: {}
+            target:
+              entity_id: !input peblar_charge_switch
+            data: {}
+        alias: Direct laden stoppen
+      - conditions:
+          - condition: state
+            entity_id: !input goedkoop_laden_binary
+            state:
+              - "off"
+          - condition: state
+            entity_id: !input select_laadpaal_gestart_door
+            state:
+              - Goedkoop laden
+        sequence:
+          - action: switch.turn_off
+            metadata: {}
+            target:
+              entity_id: !input peblar_charge_switch
+            data: {}
+        alias: Goedkoop laden stoppen
+      - conditions:
+          - condition: state
+            entity_id: !input goedkoop_laden_binary
+            state:
+              - "off"
+          - condition: state
+            entity_id: !input select_laadpaal_gestart_door
+            state:
+              - Zonneladen
+          - condition: state
+            entity_id: !input peblar_smart_charge_mode
+            state:
+              - default
+              - scheduled
+              - fast_solar
+        sequence:
+          - if:
+              - alias: Maand mrt, sep en okt
+                condition: template
+                value_template: >
+                  {{ huidige_maand in maanden_slim_zonneladen }}
+            then:
+              - action: select.select_option
+                metadata: {}
+                target:
+                  entity_id: !input peblar_smart_charge_mode
+                data:
+                  option: smart_solar
+            else:
+              - action: select.select_option
+                metadata: {}
+                target:
+                  entity_id: !input peblar_smart_charge_mode
+                data:
+                  option: pure_solar
+            alias: Zonneladen instellen
+        alias: Goedkoop aanvullen stoppen
+mode: single
