@@ -1,4 +1,4 @@
-# Home Assistant
+# Home Assistant repo
 Home Assistant blueprints, scripts en dergelijke
 
 ## Automation blueprint - Peblar slim opladen
@@ -24,3 +24,6 @@ Voordat je de blueprint kunt gebruiken, dien je:
    -  Schakelaar - Zonneladen goedkoop aanvullen (om te bepalen of het zonneladen goedkoop aangevuld moet worden (schakelt op goedkoop tarief naar "Snel zonneladen")),
    -  Schakelaar - Direct laden (om direct te starten met laden wanneer nodig),
    -  Keuzelijst - Laadpaal gestart door - helper die waardes "Goedkoop laden, Zonneladen, Direct" moet bevatten om te onthouden welke optie de laadsessie gestart heeft.
+
+# Bedankt:
+* [@TheFes](https://github.com/TheFes) voor ontwikkelen van de Cheapest Energy Hours code!
