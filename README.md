@@ -1,7 +1,7 @@
 # Home Assistant repo
 Home Assistant blueprints, scripts en dergelijke
 
-## Automation blueprint - Peblar slim opladen
+## Automation blueprint - peblar_smart_charge.yaml - EV slim opladen met Peblar laadpaal
 Met behulp van deze blueprint kan een Peblar laadpaal slim aangestuurd worden op basis van seizoen en dynamische tarieven.
 Hierbij heb je ook nodig:
 - De officiële Peblar integratie: https://www.home-assistant.io/integrations/peblar/
