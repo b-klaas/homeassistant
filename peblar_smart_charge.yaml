@@ -1,7 +1,9 @@
 blueprint:
   name: Peblar slim opladen
+  author: Boyd Klaas
   description: EV slim opladen op basis van zon en goedkope dynamische tarieven
   domain: automation
+  source_url: https://github.com/b-klaas/homeassistant/blob/main/peblar_smart_charge.yaml
   input:
     peblar_ev_charger_status:
       name: Peblar status sensor
