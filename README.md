@@ -15,10 +15,52 @@ Voordat je de blueprint kunt gebruiken, dien je:
 {% from 'cheapest_energy_hours.jinja' import cheapest_energy_hours %}
 {{ cheapest_energy_hours(sensor='sensor.nordpool_ceh_prices',hours=states('input_number.aantal_uren_goedkoop_laden'),start=states('input_datetime.starttijd_goedkoop_laden'),end=states('input_datetime.eindtijd_goedkoop_laden'),mode='is_now') }}
 ```
-3. In het voorbeeld bij stap 2 is de binaire sensor dynamisch aanpasbaar qua sessieduur, starttijd en eindtijd, hiervoor zijn de volgende helpers nodig:
+3. In het voorbeeld bij stap 2 is de binaire sensor dynamisch aanpasbaar qua sessieduur, starttijd en eindtijd, hiervoor zijn de volgende helpers en automatiseringen nodig:
    - input_number.aantal_uren_goedkoop_laden: Numerieke invoer met minimale waarde 0.25, maximum waarde (bijvoorbeeld 5) en stapgrootte 0.25,
    - input_datetime.starttijd_goedkoop_laden: Datum & Tijd invoer helper,
+   - Automatisering om de starttijd in te stellen wanneer de auto aangesloten wordt:
+      ```
+      alias: Peblar auto aangesloten
+      description: ""
+      triggers:
+        - trigger: state
+          entity_id:
+            - sensor.peblar_ev_charger_status
+          from:
+            - no_ev_connected
+          to:
+            - suspended
+            - charging
+      conditions: []
+      actions:
+        - action: input_datetime.set_datetime
+          metadata: {}
+          data:
+            datetime: "{{ now() }}"
+          target:
+            entity_id: input_datetime.starttijd_goedkoop_laden
+      mode: single
+      ```
    - input_datetime.eindtijd_goedkoop_laden: Datum & Tijd invoer helper,
+   - Automatisering om de eindtijd automatisch naar morgen te verzetten:
+      ```
+      alias: Peblar eindtijd goedkoop laden verzetten
+      description: ""
+      triggers:
+        - trigger: time
+          at: input_datetime.eindtijd_goedkoop_laden
+      conditions: []
+      actions:
+        - action: input_datetime.set_datetime
+          metadata: {}
+          target:
+            entity_id: input_datetime.eindtijd_goedkoop_laden
+          data:
+            datetime: >-
+              {{ strptime(states('input_datetime.eindtijd_goedkoop_laden'), '%Y-%m-%d
+              %H:%M:%S') + timedelta(days=1) }}
+      mode: single
+      ```
 4. Tot slot zijn de volgende helpers nodig:
    -  Schakelaar - Na zonsondergang laden (om te bepalen of er na zonsondergang geladen mag worden),
    -  Schakelaar - Zonneladen goedkoop aanvullen (om te bepalen of het zonneladen goedkoop aangevuld moet worden (schakelt op goedkoop tarief naar "Snel zonneladen")),
