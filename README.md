@@ -1,14 +1,14 @@
 # Home Assistant repo
 Home Assistant blueprints, scripts en dergelijke
 
-### Automation blueprint - peblar_smart_charge.yaml - EV slim opladen met Peblar laadpaal
+## Automation blueprint - peblar_smart_charge.yaml - EV slim opladen met Peblar laadpaal
 Met behulp van deze blueprint kan een Peblar laadpaal slim aangestuurd worden op basis van seizoen en dynamische tarieven.
 Hierbij heb je ook nodig:
 - De officiële Peblar integratie: https://www.home-assistant.io/integrations/peblar/
 - De officiële Nord Pool integratie: https://www.home-assistant.io/integrations/nordpool/
 - De Cheapest Energy Hours blueprints van TheFes: https://github.com/TheFes/cheapest-energy-hours
 
-#### Functionaliteit
+### Functionaliteit
 
 De blueprint combineert:
 
@@ -19,7 +19,7 @@ De blueprint combineert:
 
 Hierdoor wordt automatisch de meest geschikte laadmodus gekozen.
 
-#### Laadstrategieën
+### Laadstrategieën
 
 | Periode | Modus |
 |----------|--------|
@@ -27,7 +27,7 @@ Hierdoor wordt automatisch de meest geschikte laadmodus gekozen.
 | Voorjaar/najaar (mrt, sep, okt) | Smart Solar |
 | Zomer (apr t/m aug) | Pure Solar |
 
-#### Winterstrategie
+### Winterstrategie
 
 Tijdens de wintermaanden is voldoende zonne-energie vaak beperkt beschikbaar.
 
@@ -35,19 +35,19 @@ Wanneer een goedkoop energietarief actief is, wordt de laadpaal automatisch gest
 
 Optioneel kan laden na zonsondergang worden toegestaan zodat ook buiten de winterperiode goedkope uren benut kunnen worden.
 
-#### Smart Solar
+### Smart Solar
 
 In de overgangsmaanden wordt gebruik gemaakt van Peblar's `smart_solar` modus.
 
 Deze modus geeft prioriteit aan zonne-energie maar mag indien nodig beperkt netvermogen gebruiken.
 
-#### Pure Solar
+### Pure Solar
 
 In de zomer wordt gebruik gemaakt van `pure_solar`.
 
 Hierbij wordt uitsluitend geladen met overtollige zonne-energie.
 
-#### Goedkoop aanvullen
+### Goedkoop aanvullen
 
 Wanneer de helper **Zonneladen goedkoop aanvullen** is ingeschakeld en een goedkoop energietarief actief wordt, schakelt de blueprint tijdelijk naar `fast_solar`.
 
@@ -55,7 +55,7 @@ Hiermee wordt beschikbare zonne-energie gecombineerd met goedkoop netvermogen om
 
 Na afloop van het goedkope tarief wordt automatisch teruggeschakeld naar de oorspronkelijke zonnelaadmodus.
 
-#### Direct laden
+### Direct laden
 
 Met de helper **Direct laden** kan direct een laadsessie gestart worden.
 
@@ -63,6 +63,7 @@ De laadmodus wordt ingesteld op `default` en de laadsessie start onmiddellijk.
 
 Wanneer de helper wordt uitgeschakeld stopt de door de blueprint gestarte sessie automatisch.
 
+### Installatie
 Voordat je de blueprint kunt gebruiken, dien je:
 1. Een template sensor 'sensor.nordpool_ceh_prices' aan te maken in configuration.yaml die zorgt dat de prijzen als attribuut uit te lezen zijn: https://github.com/TheFes/cheapest-energy-hours/blob/main/documentation/blueprints/energy_price_sensor.md,
 2. Een template helper van type binaire sensor aan te maken die true/false geeft op basis van dynamische tarieven, bijvoorbeeld met de volgende code:
