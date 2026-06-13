@@ -33,9 +33,9 @@ blueprint:
         entity:
           filter:
             - domain: binary_sensor
-    switch_na_zonsondergang_laden:
-      name: Schakelaar - Na zonsondergang laden
-      description: Schakelaar (helper) om te bepalen of er na zonsondergang geladen mag worden
+    switch_altijd_goedkoop_laden:
+      name: Schakelaar - Altijd goedkoop laden
+      description: Schakelaar (helper) om te bepalen of er onafhankelijk van seizoen en zon goedkoop geladen mag worden
       selector:
         entity:
           filter:
@@ -154,7 +154,7 @@ triggers:
       - unavailable
   - trigger: state
     entity_id:
-      - !input switch_na_zonsondergang_laden
+      - !input switch_altijd_goedkoop_laden
     to:
       - "on"
       - "off"
@@ -230,17 +230,11 @@ actions:
                 condition: template
                 value_template: >
                   {{ huidige_maand in maanden_goedkoop_laden }}
-              - condition: and
-                conditions:
-                  - condition: state
-                    entity_id: sun.sun
-                    state:
-                      - below_horizon
-                  - condition: state
-                    entity_id: !input switch_na_zonsondergang_laden
-                    state:
-                      - "on"
-                alias: Na zonsondergang laden
+              - alias: Altijd goedkoop laden toegestaan
+                condition: state
+                entity_id: !input switch_altijd_goedkoop_laden
+                state:
+                  - "on"
           - condition: state
             entity_id: !input goedkoop_laden_binary
             state:
