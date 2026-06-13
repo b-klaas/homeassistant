@@ -370,11 +370,26 @@ actions:
             state:
               - Direct
         sequence:
-          - action: switch.turn_off
-            metadata: {}
-            target:
-              entity_id: !input peblar_charge_switch
-            data: {}
+          - if:
+              - alias: Maand mrt, sep en okt
+                condition: template
+                value_template: >
+                  {{ huidige_maand in maanden_slim_zonneladen }}
+            then:
+              - action: select.select_option
+                metadata: {}
+                target:
+                  entity_id: !input peblar_smart_charge_mode
+                data:
+                  option: smart_solar
+            else:
+              - action: select.select_option
+                metadata: {}
+                target:
+                  entity_id: !input peblar_smart_charge_mode
+                data:
+                  option: pure_solar
+            alias: Zonneladen instellen
         alias: Direct laden stoppen
       - conditions:
           - condition: state
@@ -386,11 +401,26 @@ actions:
             state:
               - Goedkoop laden
         sequence:
-          - action: switch.turn_off
-            metadata: {}
-            target:
-              entity_id: !input peblar_charge_switch
-            data: {}
+          - if:
+              - alias: Maand mrt, sep en okt
+                condition: template
+                value_template: >
+                  {{ huidige_maand in maanden_slim_zonneladen }}
+            then:
+              - action: select.select_option
+                metadata: {}
+                target:
+                  entity_id: !input peblar_smart_charge_mode
+                data:
+                  option: smart_solar
+            else:
+              - action: select.select_option
+                metadata: {}
+                target:
+                  entity_id: !input peblar_smart_charge_mode
+                data:
+                  option: pure_solar
+            alias: Zonneladen instellen
         alias: Goedkoop laden stoppen
       - conditions:
           - condition: state
