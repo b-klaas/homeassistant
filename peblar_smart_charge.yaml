@@ -147,6 +147,11 @@ triggers:
       - charging
   - trigger: state
     entity_id:
+      - !input peblar_ev_charger_status
+    to:
+      - no_ev_connected
+  - trigger: state
+    entity_id:
       - !input goedkoop_laden_binary
     to:
       - "on"
