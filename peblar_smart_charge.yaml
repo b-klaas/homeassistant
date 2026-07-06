@@ -187,6 +187,7 @@ conditions:
     state:
       - charging
       - suspended
+      - no_ev_connected
 
 variables:
   maanden_goedkoop_laden: !input maanden_goedkoop_laden
